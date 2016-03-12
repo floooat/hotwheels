@@ -95,13 +95,13 @@ public class AnalyseTrack extends UntypedActor {
             // Track identification.
             if(oldTrackTimestamp == 0) {
                 oldTrackTimestamp = message.getTimeStamp();
-                System.out.println("Trackpart start.");
+                //System.out.println("Trackpart start.");
             } else {
                 double timeforTrack = message.getTimeStamp() - oldTrackTimestamp;
                 double velocity = message.getVelocity();
 
                 double lenghtOfTrackPart = velocity * timeforTrack;
-                System.out.println("Got a trackpart with lenght " + lenghtOfTrackPart);
+                //System.out.println("Got a trackpart with lenght " + lenghtOfTrackPart);
 
                 // addd.
                 TrackPart trackToAdd = new TrackPart();
@@ -116,6 +116,7 @@ public class AnalyseTrack extends UntypedActor {
                 } else {
                     trackToAdd.type = TrackPart.TrackType.STRAIGHT;
                 }
+                System.out.println(trackToAdd.type);
 
                 if(startTrack == null) {
                     startTrack = trackToAdd;
