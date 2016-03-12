@@ -98,8 +98,8 @@ public class JavaPilotActor extends UntypedActor {
                 record(message);
                 handlePenaltyMessage ((PenaltyMessage) message );
 
-            }else if ( message instanceof endPowerUp ) {
-                System.out.println("POWER: "+String.valueOf(((endPowerUp) message).getPowerMid()));
+            }else if ( message instanceof EndPowerUp) {
+                System.out.println("POWER: "+String.valueOf(((EndPowerUp) message).getPowerMid()));
 
             } else if ( message instanceof RoundTimeMessage ) {
                 handleRoundTime((RoundTimeMessage) message);

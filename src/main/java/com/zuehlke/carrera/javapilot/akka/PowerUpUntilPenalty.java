@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import com.zuehlke.carrera.relayapi.messages.PenaltyMessage;
-import com.zuehlke.carrera.relayapi.messages.PowerControl;
 import com.zuehlke.carrera.relayapi.messages.RaceStartMessage;
 import com.zuehlke.carrera.relayapi.messages.SensorEvent;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
@@ -90,8 +89,8 @@ public class PowerUpUntilPenalty extends UntypedActor {
         probing = false;
         if (cPenalties == 3) {
             System.out.println("END FIRST PHASE");
-            kobayashi.tell(new endPowerUp((int) currentPower), getSelf());
-            //kobayashi.tell(new endPowerUp(f(int) currentPower), getSelf());
+            kobayashi.tell(new EndPowerUp((int) currentPower), getSelf());
+            //kobayashi.tell(new EndPowerUp(f(int) currentPower), getSelf());
         }
     }
 
