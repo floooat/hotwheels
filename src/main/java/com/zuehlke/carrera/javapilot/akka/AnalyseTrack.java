@@ -7,13 +7,11 @@ import com.zuehlke.carrera.relayapi.messages.*;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
 
-import javax.sound.midi.Track;
-
 /**
  *  this logic node increases the power level by 10 units per 0.5 second until it receives a penalty
  *  then reduces by ten units.
  */
-public class GoFast extends UntypedActor {
+public class AnalyseTrack extends UntypedActor {
 
     private final ActorRef sexymodderfucka;
 
@@ -36,11 +34,11 @@ public class GoFast extends UntypedActor {
      */
     public static Props props( ActorRef pilotActor, int duration ) {
         return Props.create(
-                GoFast.class, () -> new GoFast(pilotActor, duration ));
+                AnalyseTrack.class, () -> new AnalyseTrack(pilotActor, duration ));
     }
     private final int duration;
 
-    public GoFast(ActorRef pilotActor, int duration) {
+    public AnalyseTrack(ActorRef pilotActor, int duration) {
         lastIncrease = System.currentTimeMillis();
         this.sexymodderfucka = pilotActor;
         this.duration = duration;
