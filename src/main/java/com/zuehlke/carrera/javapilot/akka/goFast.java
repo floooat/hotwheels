@@ -6,6 +6,7 @@ import akka.actor.UntypedActor;
 import com.zuehlke.carrera.relayapi.messages.PenaltyMessage;
 import com.zuehlke.carrera.relayapi.messages.RaceStartMessage;
 import com.zuehlke.carrera.relayapi.messages.SensorEvent;
+import com.zuehlke.carrera.relayapi.messages.VelocityMessage;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
 
@@ -47,11 +48,12 @@ public class GoFast extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Exception {
-
-        if ( message instanceof SensorEvent ) {
+        if (message instanceof VelocityMessage) {
+            System.out.println(message);
+        } else if ( message instanceof SensorEvent ) {
             handleSensorEvent((SensorEvent) message);
 
-        } else if ( message instanceof PenaltyMessage) {
+        } else if (message instanceof PenaltyMessage) {
             handlePenaltyMessage ();
 
         } else if ( message instanceof RaceStartMessage) {
