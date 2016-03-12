@@ -15,7 +15,7 @@ public class AnalyseTrack extends UntypedActor {
 
     private final ActorRef sexymodderfucka;
 
-    private double currentPower = 0;
+    private double currentPower = 100;
     private long lastIncrease = 0;
 
     private int maxPower = 180; // Max for this phase;
@@ -142,8 +142,8 @@ public class AnalyseTrack extends UntypedActor {
                 lastIncrease = message.getTimeStamp();
                 increase(3);
             }
-            if(currentPower >= 120.0) {
-                currentPower = 120.0;
+            if(currentPower >= 110.0) {
+                currentPower = 110.0;
             }
         }
 
