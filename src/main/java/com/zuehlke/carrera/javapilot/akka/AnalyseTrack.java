@@ -72,19 +72,19 @@ public class AnalyseTrack extends UntypedActor {
         if(message.getRoundDuration() > 72036854775807.0) {
             // Some fail val.
         } else {
-            // First time we pass the goal. --> start tracking
-            if(firstRound) {
-                firstRound = false;
-                trackingEnabled = true;
-                System.out.println("Start tracking the track.");
-            }
-
             // Second time we pass the goal. --> stop tracking
             if(trackingEnabled) {
                 // Stop tracking and close the track.
                 trackingEnabled = false;
                 completeTheTrack = true;
                 System.out.println("Stop tracking the track.");
+            }
+
+            // First time we pass the goal. --> start tracking
+            if(firstRound) {
+                firstRound = false;
+                trackingEnabled = true;
+                System.out.println("Start tracking the track.");
             }
         }
     }
@@ -106,6 +106,17 @@ public class AnalyseTrack extends UntypedActor {
                 // addd.
                 TrackPart trackToAdd = new TrackPart();
                 trackToAdd.lenght = lenghtOfTrackPart;
+
+                // Type
+                double mean = gyrozHistory.currentMean();
+                if(mean <= -1000) {
+                    trackToAdd.type = TrackPart.TrackType.LEFTCURVE;
+                } else if(mean >= 1000) {
+                    trackToAdd.type = TrackPart.TrackType.RIGHTCURVE;
+                } else {
+                    trackToAdd.type = TrackPart.TrackType.STRAIGHT;
+                }
+
                 if(startTrack == null) {
                     startTrack = trackToAdd;
                 } else {

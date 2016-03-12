@@ -8,13 +8,14 @@ package com.zuehlke.carrera.javapilot.akka;
 
 public class TrackPart {
 
-    public enum type {
+    public enum TrackType {
         LEFTCURVE, RIGHTCURVE, STRAIGHT
     }
 
     public double lenght;
     public TrackPart prev;
     public TrackPart next;
+    public TrackType type;
 
     public void addNextTrack(TrackPart track) {
         if(this.next == null) {
