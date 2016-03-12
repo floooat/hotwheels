@@ -10,6 +10,7 @@ import com.zuehlke.carrera.javapilot.io.StopReplayCommand;
 import com.zuehlke.carrera.javapilot.services.EndpointAnnouncement;
 import com.zuehlke.carrera.javapilot.services.PilotToRelayConnection;
 import com.zuehlke.carrera.relayapi.messages.*;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ public class JavaPilotActor extends UntypedActor {
     public JavaPilotActor(PilotProperties properties ) {
 
         this.properties = properties;
-        strategy = getContext().actorOf(PowerUpUntilPenalty.props(getSelf(), 1500));
+        strategy = getContext().actorOf(GoFast.props(getSelf(), 1500));
         recorder = getContext().actorOf(RaceRecorderActor.props(getSelf()));
     }
 
