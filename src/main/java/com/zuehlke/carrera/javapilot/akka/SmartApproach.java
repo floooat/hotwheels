@@ -15,7 +15,7 @@ import java.math.RoundingMode;
  *  this logic node increases the power level by 10 units per 0.5 second until it receives a penalty
  *  then reduces by ten units.
  */
-public class AnalyseTrack extends UntypedActor {
+public class SmartApproach extends UntypedActor {
 
     private final ActorRef sexymodderfucka;
 
@@ -23,6 +23,7 @@ public class AnalyseTrack extends UntypedActor {
     private long lastIncrease = 0;
     private double maxThres = 0;
     private double minThres = 1000;
+    private int laps;
 
     private int maxPower = 180; // Max for this phase;
 
@@ -41,14 +42,15 @@ public class AnalyseTrack extends UntypedActor {
      */
     public static Props props( ActorRef pilotActor, int duration ) {
         return Props.create(
-                AnalyseTrack.class, () -> new AnalyseTrack(pilotActor, duration ));
+                SmartApproach.class, () -> new SmartApproach(pilotActor, duration ));
     }
     private final int duration;
 
-    public AnalyseTrack(ActorRef pilotActor, int duration) {
+    public SmartApproach(ActorRef pilotActor, int duration) {
         lastIncrease = System.currentTimeMillis();
         this.sexymodderfucka = pilotActor;
         this.duration = duration;
+        laps = 0;
     }
 
     @Override
@@ -78,19 +80,22 @@ public class AnalyseTrack extends UntypedActor {
         if(message.getRoundDuration() > 72036854775807.0) {
             // Some fail val.
         } else {
+            laps++;
+            System.out.println("NEW LAP "+ laps);
             // Second time we pass the goal. --> stop tracking
             if(trackingEnabled) {
                 // Stop tracking and close the track.
                 trackingEnabled = false;
                 completeTheTrack = true;
-                System.out.println("Stop tracking the track.");
+                //System.out.println("Stop tracking the track.");
             }
 
             // First time we pass the goal. --> start tracking
             if(firstRound) {
+
                 firstRound = false;
                 trackingEnabled = true;
-                System.out.println("Start tracking the track.");
+                //System.out.println("Start tracking the track.");
             }
         }
     }
@@ -99,6 +104,7 @@ public class AnalyseTrack extends UntypedActor {
     private void handleVelocityMessage(VelocityMessage message) {
         if(trackingEnabled || completeTheTrack) {
             // Track identification.
+            System.out.println("GATE");
             if(oldTrackTimestamp == 0) {
                 oldTrackTimestamp = message.getTimeStamp();
                 //System.out.println("Trackpart start.");
@@ -122,7 +128,7 @@ public class AnalyseTrack extends UntypedActor {
                 } else {
                     trackToAdd.type = TrackPart.TrackType.STRAIGHT;
                 }
-                System.out.println(trackToAdd.type);
+                //System.out.println(trackToAdd.type);
 
                 if(startTrack == null) {
                     startTrack = trackToAdd;
@@ -134,7 +140,7 @@ public class AnalyseTrack extends UntypedActor {
                 if(completeTheTrack) {
                     // Complete it now.
                     startTrack.closeTrack();
-                    System.out.println("Track closed and completed.");
+                    //System.out.println("Track closed and completed.");
                     completeTheTrack = false;
                 }
             }
@@ -172,21 +178,27 @@ public class AnalyseTrack extends UntypedActor {
 
         double gyrz = gyrozHistory.shift(message.getG()[2]);
 
-        if (gyrz >= 0) {
+        if (gyrz >= 0.0) {
             if (gyrz > maxThres) maxThres = gyrz;
             if (!firstRound) {
-                double aux = (gyrz/maxThres);
-                System.out.print("Z: " + round(aux, 2));
+                double aux = round((gyrz/maxThres), 2);
+                if (aux > 0.1) System.out.print("R ");
+                else System.out.print("S ");
+                System.out.println("Z: " + aux);
             }
         }
         else {
             if (gyrz < minThres) minThres = gyrz;
             if (!firstRound) {
-                double aux = (gyrz/minThres);
-                System.out.print("Z: " + round(aux, 2));
+                double aux = round((gyrz/minThres), 2);
+                if (aux > 0.1) System.out.print("L ");
+                else System.out.print("S ");
+                System.out.println("Z: " + aux);
             }
         }
-        //System.out.println(" MAX: "+ maxThres + " MIN: " + minThres);
+        if (laps == 0) {
+            System.out.println(" MAX: "+ maxThres + " MIN: " + minThres);
+        }
 
         //show ((int)gyrz);
 

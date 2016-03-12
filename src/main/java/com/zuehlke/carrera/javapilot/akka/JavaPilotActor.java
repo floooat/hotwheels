@@ -13,6 +13,7 @@ import com.zuehlke.carrera.relayapi.messages.*;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.zuehlke.carrera.javapilot.messages.*;
 
 /**
  *  Central actor responsible for driving the car. All data gets here and all decisions are finally made here.
@@ -24,6 +25,7 @@ public class JavaPilotActor extends UntypedActor {
 
     private ActorRef strategy;
     private ActorRef recorder;
+    private ActorRef learner;
     private boolean replaying;
 
     private PilotToRelayConnection relayConnection;
@@ -31,8 +33,9 @@ public class JavaPilotActor extends UntypedActor {
     public JavaPilotActor(PilotProperties properties ) {
 
         this.properties = properties;
-        strategy = getContext().actorOf(AnalyseTrack.props(getSelf(), 1500));
+        strategy = getContext().actorOf(SmartApproach.props(getSelf(), 1500));
         recorder = getContext().actorOf(RaceRecorderActor.props(getSelf()));
+        learner = getContext().actorOf(LearnerPathActor.props(getSelf(), 1500));
     }
 
 
@@ -94,6 +97,9 @@ public class JavaPilotActor extends UntypedActor {
             } else if (message instanceof PenaltyMessage ) {
                 record(message);
                 handlePenaltyMessage ((PenaltyMessage) message );
+
+            }else if ( message instanceof endPowerUp ) {
+                System.out.println("POWER: "+String.valueOf(((endPowerUp) message).getPowerMid()));
 
             } else if ( message instanceof RoundTimeMessage ) {
                 handleRoundTime((RoundTimeMessage) message);
@@ -196,7 +202,7 @@ public class JavaPilotActor extends UntypedActor {
     }
 
     private void handleRaceStart() {
-        strategy = getContext().actorOf(AnalyseTrack.props(getSelf(), 1500));
+        strategy = getContext().actorOf(SmartApproach.props(getSelf(), 1500));
         long now = System.currentTimeMillis();
         LOGGER.info("received race start at " + new LocalDateTime(now).toString());
     }
