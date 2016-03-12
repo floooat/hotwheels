@@ -45,11 +45,10 @@ public class GoFast extends UntypedActor {
         this.duration = duration;
     }
 
-
     @Override
     public void onReceive(Object message) throws Exception {
+
         if (message instanceof VelocityMessage) {
-            System.out.println(message);
         } else if ( message instanceof SensorEvent ) {
             handleSensorEvent((SensorEvent) message);
 
