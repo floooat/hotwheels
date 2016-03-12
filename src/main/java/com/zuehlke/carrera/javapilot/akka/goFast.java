@@ -3,12 +3,11 @@ package com.zuehlke.carrera.javapilot.akka;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import com.zuehlke.carrera.relayapi.messages.PenaltyMessage;
-import com.zuehlke.carrera.relayapi.messages.RaceStartMessage;
-import com.zuehlke.carrera.relayapi.messages.SensorEvent;
-import com.zuehlke.carrera.relayapi.messages.VelocityMessage;
+import com.zuehlke.carrera.relayapi.messages.*;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
+
+import javax.sound.midi.Track;
 
 /**
  *  this logic node increases the power level by 10 units per 0.5 second until it receives a penalty
@@ -19,12 +18,14 @@ public class GoFast extends UntypedActor {
     private final ActorRef sexymodderfucka;
 
     private double currentPower = 0;
-
     private long lastIncrease = 0;
 
     private int maxPower = 180; // Max for this phase;
 
     private boolean probing = true;
+    private boolean trackCompleted = false;
+    private boolean startTrackingTheTrack = false;
+    private TrackPart startTrack = null;
 
     private FloatingHistory gyrozHistory = new FloatingHistory(8);
 
@@ -48,18 +49,67 @@ public class GoFast extends UntypedActor {
     @Override
     public void onReceive(Object message) throws Exception {
 
-        if (message instanceof VelocityMessage) {
-        } else if ( message instanceof SensorEvent ) {
+        if ( message instanceof SensorEvent ) {
             handleSensorEvent((SensorEvent) message);
 
+        } else if(message instanceof RoundTimeMessage) {
+            handleRoundTimeMessage((RoundTimeMessage)message);
+
+        } else if (message instanceof VelocityMessage) {
+            handleVelocityMessage((VelocityMessage) message);
+
         } else if (message instanceof PenaltyMessage) {
-            handlePenaltyMessage ();
+            handlePenaltyMessage();
 
         } else if ( message instanceof RaceStartMessage) {
             handleRaceStart();
 
         } else {
             unhandled(message);
+        }
+    }
+
+    private void handleRoundTimeMessage(RoundTimeMessage message) {
+        if(message.getRoundDuration() > 72036854775807.0) {
+            // Some fail val.
+        } else {
+            if(startTrackingTheTrack) {
+                startTrackingTheTrack = false;
+                trackCompleted = true;
+                startTrack.closeTrack();
+                System.out.println("Track closed and completed.");
+
+            } else {
+                System.out.println("Start tracking the track.");
+                startTrackingTheTrack = true;
+            }
+        }
+    }
+
+    private double oldTrackTimestamp = 0;
+    private void handleVelocityMessage(VelocityMessage message) {
+        if(startTrackingTheTrack) {
+            // Track identification.
+            if(oldTrackTimestamp == 0) {
+                oldTrackTimestamp = message.getTimeStamp();
+                System.out.println("Trackpart start.");
+            } else {
+                double timeforTrack = message.getTimeStamp() - oldTrackTimestamp;
+                double velocity = message.getVelocity();
+
+                double lenghtOfTrackPart = velocity * timeforTrack;
+                System.out.println("Got a trackpart with lenght " + lenghtOfTrackPart);
+
+                // addd.
+                TrackPart trackToAdd = new TrackPart();
+                trackToAdd.lenght = lenghtOfTrackPart;
+                if(startTrack == null) {
+                    startTrack = trackToAdd;
+                } else {
+                    startTrack.addNextTrack(trackToAdd);
+                }
+                oldTrackTimestamp =  message.getTimeStamp();
+            }
         }
     }
 
@@ -85,7 +135,7 @@ public class GoFast extends UntypedActor {
     private void handleSensorEvent(SensorEvent message) {
 
         double gyrz = gyrozHistory.shift(message.getG()[2]);
-         show ((int)gyrz);
+        //show ((int)gyrz);
 
         if (probing) {
             if (iAmStillStanding()) {
@@ -93,6 +143,9 @@ public class GoFast extends UntypedActor {
             } else if (message.getTimeStamp() > lastIncrease + duration) {
                 lastIncrease = message.getTimeStamp();
                 increase(3);
+            }
+            if(currentPower >= 120.0) {
+                currentPower = 120.0;
             }
         }
 

@@ -12,9 +12,25 @@ public class TrackPart {
         LEFTCURVE, RIGHTCURVE, STRAIGHT
     }
 
-    public int lenght;
+    public double lenght;
     public TrackPart prev;
     public TrackPart next;
 
+    public void addNextTrack(TrackPart track) {
+        if(this.next == null) {
+            this.next = track;
+            track.prev = this;
+        } else {
+            this.next.addNextTrack(track);
+        }
+    }
 
+    public void closeTrack() {
+        TrackPart last = this;
+        while(last.next != null) {
+            last = last.next;
+        }
+        this.prev = last;
+        last.next = this;
+    }
 }

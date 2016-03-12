@@ -83,7 +83,6 @@ public class JavaPilotActor extends UntypedActor {
             } else if (message instanceof VelocityMessage) {
                 record(message);
                 handleVelocityMessage((VelocityMessage) message);
-
             } else if (message instanceof PilotToRelayConnection) {
                 this.relayConnection = (PilotToRelayConnection) message;
 
@@ -120,6 +119,8 @@ public class JavaPilotActor extends UntypedActor {
 
     private void handleRoundTime(RoundTimeMessage message) {
         LOGGER.info ( "Round Time in ms: " + message.getRoundDuration());
+
+        strategy.forward(message, getContext());
     }
 
     private void handlePenaltyMessage(PenaltyMessage message) {
