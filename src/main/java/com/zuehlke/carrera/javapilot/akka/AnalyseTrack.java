@@ -21,8 +21,9 @@ public class AnalyseTrack extends UntypedActor {
     private int maxPower = 180; // Max for this phase;
 
     private boolean probing = true;
-    private boolean trackCompleted = false;
-    private boolean startTrackingTheTrack = false;
+    private boolean completeTheTrack = false;
+    private boolean trackingEnabled = false;
+    private boolean firstRound = true;
     private TrackPart startTrack = null;
 
     private FloatingHistory gyrozHistory = new FloatingHistory(8);
@@ -71,22 +72,26 @@ public class AnalyseTrack extends UntypedActor {
         if(message.getRoundDuration() > 72036854775807.0) {
             // Some fail val.
         } else {
-            if(startTrackingTheTrack) {
-                startTrackingTheTrack = false;
-                trackCompleted = true;
-                startTrack.closeTrack();
-                System.out.println("Track closed and completed.");
-
-            } else {
+            // First time we pass the goal. --> start tracking
+            if(firstRound) {
+                firstRound = false;
+                trackingEnabled = true;
                 System.out.println("Start tracking the track.");
-                startTrackingTheTrack = true;
+            }
+
+            // Second time we pass the goal. --> stop tracking
+            if(trackingEnabled) {
+                // Stop tracking and close the track.
+                trackingEnabled = false;
+                completeTheTrack = true;
+                System.out.println("Stop tracking the track.");
             }
         }
     }
 
     private double oldTrackTimestamp = 0;
     private void handleVelocityMessage(VelocityMessage message) {
-        if(startTrackingTheTrack) {
+        if(trackingEnabled || completeTheTrack) {
             // Track identification.
             if(oldTrackTimestamp == 0) {
                 oldTrackTimestamp = message.getTimeStamp();
@@ -107,6 +112,13 @@ public class AnalyseTrack extends UntypedActor {
                     startTrack.addNextTrack(trackToAdd);
                 }
                 oldTrackTimestamp =  message.getTimeStamp();
+
+                if(completeTheTrack) {
+                    // Complete it now.
+                    startTrack.closeTrack();
+                    System.out.println("Track closed and completed.");
+                    completeTheTrack = false;
+                }
             }
         }
     }
