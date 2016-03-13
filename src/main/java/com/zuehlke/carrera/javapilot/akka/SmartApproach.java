@@ -3,13 +3,13 @@ package com.zuehlke.carrera.javapilot.akka;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import com.sun.org.apache.xpath.internal.operations.String;
 import com.zuehlke.carrera.relayapi.messages.*;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 
 /**
  *  this logic node increases the power level by 10 units per 0.5 second until it receives a penalty
@@ -24,6 +24,8 @@ public class SmartApproach extends UntypedActor {
     private double maxThres = 0;
     private double minThres = 1000;
     private int laps;
+
+    private ArrayList<ArrayList<Double>> tracks;
 
     private int maxPower = 180; // Max for this phase;
 
@@ -51,6 +53,11 @@ public class SmartApproach extends UntypedActor {
         this.sexymodderfucka = pilotActor;
         this.duration = duration;
         laps = 0;
+        tracks = new ArrayList<ArrayList<Double>>();
+        for (int i = 0; i < 10; ++i) {
+            ArrayList<Double> aux = new ArrayList<>();
+            tracks.add(aux);
+        }
     }
 
     @Override
@@ -76,11 +83,68 @@ public class SmartApproach extends UntypedActor {
         }
     }
 
+    private void cout(String str) {
+        System.out.println(str);
+    }
+
+    private void doTracking() {
+        int size1 = tracks.get(1).size();
+        int size2 = tracks.get(2).size();
+        int size = Math.min(size1,size2);
+        for (int i = 0; i < size; ++i) {
+            double f = tracks.get(1).get(i);
+            double s = tracks.get(2).get(i);
+            tracks.get(0).add(round((f+s)/2, 2));
+        }
+        // print
+        char[] aux = new char[size];
+        for (int j = 0; j < size; ++j) {
+            Double n = tracks.get(0).get(j);
+            String str;
+            if (n > 0.15) {
+                str = "C";
+                aux[j] = 'C';
+            }
+            else if (n > 0.08) {
+                str = "D";
+                aux[j] = 'D';
+            }
+            else {
+                str = "S";
+                aux[j] = 'S';
+            }
+            System.out.println(aux[j]);
+        }
+        // the track is:
+        boolean finished = false;
+        int f = 0;
+        char now = aux[0];
+        String t = new String();
+        while (!finished) {
+            cout("START while");
+            cout(aux[f]+" "+aux[f+1]);
+            if (aux[f] != aux[f+1]) t += aux[f];
+            f++;
+            if (f == size-1) finished = true;
+
+        }
+        // finished
+        cout("FINISHED TRACKING");
+        for (int i = 0; i < t.length(); ++i) {
+            if (t.charAt(i) == 'S') cout("STRAIGHT");
+            else if (t.charAt(i) == 'C') cout("CURVE");
+            else if (t.charAt(i) == 'D') ;//cout("DANGER");}
+        }
+    }
+
     private void handleRoundTimeMessage(RoundTimeMessage message) {
         if(message.getRoundDuration() > 72036854775807.0) {
             // Some fail val.
         } else {
             laps++;
+            if (laps == 3) {
+                doTracking();
+            }
             System.out.println("NEW LAP "+ laps);
             // Second time we pass the goal. --> stop tracking
             if(trackingEnabled) {
@@ -182,23 +246,25 @@ public class SmartApproach extends UntypedActor {
             if (gyrz > maxThres) maxThres = gyrz;
             if (!firstRound) {
                 double aux = round((gyrz/maxThres), 2);
-                if (aux > 0.1) System.out.print("R ");
-                else System.out.print("S ");
-                System.out.println("Z: " + aux);
+                tracks.get(laps).add(aux);
+                //if (aux > 0.1) System.out.print("R ");
+                //else System.out.print("S ");
+                //System.out.println("Z: " + aux);
             }
         }
         else {
             if (gyrz < minThres) minThres = gyrz;
             if (!firstRound) {
                 double aux = round((gyrz/minThres), 2);
-                if (aux > 0.1) System.out.print("L ");
-                else System.out.print("S ");
-                System.out.println("Z: " + aux);
+                tracks.get(laps).add(aux);
+                //if (aux > 0.1) System.out.print("L ");
+                //else System.out.print("S ");
+                //System.out.println("Z: " + aux);
             }
         }
-        if (laps == 0) {
+        /* if (laps == 0) {
             System.out.println(" MAX: "+ maxThres + " MIN: " + minThres);
-        }
+        }*/
 
         //show ((int)gyrz);
 
