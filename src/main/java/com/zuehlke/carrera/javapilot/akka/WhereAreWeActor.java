@@ -19,8 +19,8 @@ public class WhereAreWeActor extends UntypedActor {
 
     private final ActorRef sexymodderfucka;
 
-    private double curveAcceleration = 3.5;
-    private double yoloAcceleration = 219;
+    private double curveAcceleration = 1.0;
+    private double yoloAcceleration = 160;
     private double tryHardAcceleration = 1.8;
 
     private double currentPower = 110;

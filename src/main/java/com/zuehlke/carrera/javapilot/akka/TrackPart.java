@@ -17,7 +17,7 @@ public class TrackPart {
     public TrackPart next;
     public TrackType type;
     public double lenghtFactor = -1.0;
-    public double breakPoint = 15;
+    public double breakPoint = 6;
     public boolean perfectBreakPointReached = false;
 
     public void addNextTrack(TrackPart track) {

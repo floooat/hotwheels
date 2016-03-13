@@ -16,7 +16,7 @@ javapilot:
     #name: starterkit
     #accessCode: tikretrats
 
-    rabbitUrl:      192.168.1.142 #192.168.1.142
+    rabbitUrl:      192.168.1.142 #192.168.1.142 localhost #
 
     #relayUrl:  ws://relay2.beta.swisscloud.io/ws/rest/messages # Address of relay in SC cloud !
 

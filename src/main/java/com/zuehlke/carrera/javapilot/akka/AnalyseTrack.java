@@ -181,14 +181,14 @@ public class AnalyseTrack extends UntypedActor {
             if (gyrz > maxThres) maxThres = gyrz;
             if (!firstRound) {
                 double aux = (gyrz/maxThres);
-                System.out.print("Z: " + round(aux, 2));
+                //System.out.println("Z: " + round(aux, 2));
             }
         }
         else {
             if (gyrz < minThres) minThres = gyrz;
             if (!firstRound) {
                 double aux = (gyrz/minThres);
-                System.out.print("Z: " + round(aux, 2));
+                //System.out.println("Z: " + round(aux, 2));
             }
         }
         //System.out.println(" MAX: "+ maxThres + " MIN: " + minThres);
