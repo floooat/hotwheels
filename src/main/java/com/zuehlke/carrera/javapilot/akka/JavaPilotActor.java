@@ -7,12 +7,15 @@ import akka.japi.Creator;
 import com.zuehlke.carrera.javapilot.config.PilotProperties;
 import com.zuehlke.carrera.javapilot.io.StartReplayCommand;
 import com.zuehlke.carrera.javapilot.io.StopReplayCommand;
+import com.zuehlke.carrera.javapilot.services.ChangeActorMessage;
 import com.zuehlke.carrera.javapilot.services.EndpointAnnouncement;
 import com.zuehlke.carrera.javapilot.services.PilotToRelayConnection;
 import com.zuehlke.carrera.relayapi.messages.*;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sound.midi.Track;
 
 /**
  *  Central actor responsible for driving the car. All data gets here and all decisions are finally made here.
@@ -22,19 +25,17 @@ public class JavaPilotActor extends UntypedActor {
     private final Logger LOGGER = LoggerFactory.getLogger(JavaPilotActor.class);
     private final PilotProperties properties;
 
-    private ActorRef strategy;
+    public ActorRef strategy;
     private ActorRef recorder;
     private boolean replaying;
 
     private PilotToRelayConnection relayConnection;
 
     public JavaPilotActor(PilotProperties properties ) {
-
         this.properties = properties;
         strategy = getContext().actorOf(AnalyseTrack.props(getSelf(), 1500));
         recorder = getContext().actorOf(RaceRecorderActor.props(getSelf()));
     }
-
 
     public static Props props ( PilotProperties properties) {
         return Props.create(new Creator<JavaPilotActor>() {
@@ -79,6 +80,9 @@ public class JavaPilotActor extends UntypedActor {
                 record(message);
                 handleSensorEvent((SensorEvent) message);
 
+            } else if(message instanceof ChangeActorMessage) {
+                getContext().stop(strategy);
+                strategy = getContext().actorOf(WhereAreWeActor.props(getSelf(), 1500, ((ChangeActorMessage) message).track));
             } else if (message instanceof VelocityMessage) {
                 record(message);
                 handleVelocityMessage((VelocityMessage) message);
@@ -200,4 +204,10 @@ public class JavaPilotActor extends UntypedActor {
         long now = System.currentTimeMillis();
         LOGGER.info("received race start at " + new LocalDateTime(now).toString());
     }
+
+    /*public void changeStrategy(TrackPart track) {
+        strategy = getContext().actorOf(WhereAreWeActor.props(getSelf(), 1500, track));
+        long now = System.currentTimeMillis();
+        LOGGER.info("Strategy changed at " + new LocalDateTime(now).toString());
+    }*/
 }

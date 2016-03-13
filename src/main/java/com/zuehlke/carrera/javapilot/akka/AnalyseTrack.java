@@ -3,6 +3,7 @@ package com.zuehlke.carrera.javapilot.akka;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import com.zuehlke.carrera.javapilot.services.ChangeActorMessage;
 import com.zuehlke.carrera.relayapi.messages.*;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
@@ -19,6 +20,7 @@ public class AnalyseTrack extends UntypedActor {
     private long lastIncrease = 0;
 
     private int maxPower = 180; // Max for this phase;
+    private double maxGForce = 0.0;
 
     private boolean probing = true;
     private boolean completeTheTrack = false;
@@ -108,10 +110,12 @@ public class AnalyseTrack extends UntypedActor {
                 trackToAdd.lenght = lenghtOfTrackPart;
 
                 // Type
+                double curveLimit = maxGForce / 5;
+                System.out.println(curveLimit);
                 double mean = gyrozHistory.currentMean();
-                if(mean <= -1000) {
+                if(mean <= -curveLimit) {
                     trackToAdd.type = TrackPart.TrackType.LEFTCURVE;
-                } else if(mean >= 1000) {
+                } else if(mean >= curveLimit) {
                     trackToAdd.type = TrackPart.TrackType.RIGHTCURVE;
                 } else {
                     trackToAdd.type = TrackPart.TrackType.STRAIGHT;
@@ -130,6 +134,8 @@ public class AnalyseTrack extends UntypedActor {
                     startTrack.closeTrack();
                     System.out.println("Track closed and completed.");
                     completeTheTrack = false;
+
+                    this.sexymodderfucka.tell(new ChangeActorMessage("WhereAreWeActor", this.startTrack), getSelf());
                 }
             }
         }
@@ -158,6 +164,10 @@ public class AnalyseTrack extends UntypedActor {
 
         double gyrz = gyrozHistory.shift(message.getG()[2]);
         //show ((int)gyrz);
+
+        if(Math.abs(gyrz) > maxGForce) {
+            maxGForce = Math.abs(gyrz);
+        }
 
         if (probing) {
             if (iAmStillStanding()) {
