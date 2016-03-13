@@ -3,7 +3,7 @@ package com.zuehlke.carrera.javapilot.akka;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import com.zuehlke.carrera.javapilot.services.ChangeActorMessage;
+import com.sun.org.apache.xpath.internal.operations.String;
 import com.zuehlke.carrera.relayapi.messages.*;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
@@ -15,7 +15,7 @@ import java.math.RoundingMode;
  *  this logic node increases the power level by 10 units per 0.5 second until it receives a penalty
  *  then reduces by ten units.
  */
-public class AnalyseTrack extends UntypedActor {
+public class LearnerPathActor extends UntypedActor {
 
     private final ActorRef sexymodderfucka;
 
@@ -23,9 +23,9 @@ public class AnalyseTrack extends UntypedActor {
     private long lastIncrease = 0;
     private double maxThres = 0;
     private double minThres = 1000;
+    private int laps;
 
     private int maxPower = 180; // Max for this phase;
-    private double maxGForce = 0.0;
 
     private boolean probing = true;
     private boolean completeTheTrack = false;
@@ -42,14 +42,15 @@ public class AnalyseTrack extends UntypedActor {
      */
     public static Props props( ActorRef pilotActor, int duration ) {
         return Props.create(
-                AnalyseTrack.class, () -> new AnalyseTrack(pilotActor, duration ));
+                LearnerPathActor.class, () -> new LearnerPathActor(pilotActor, duration ));
     }
     private final int duration;
 
-    public AnalyseTrack(ActorRef pilotActor, int duration) {
+    public LearnerPathActor(ActorRef pilotActor, int duration) {
         lastIncrease = System.currentTimeMillis();
         this.sexymodderfucka = pilotActor;
         this.duration = duration;
+        laps = 0;
     }
 
     @Override
@@ -79,6 +80,8 @@ public class AnalyseTrack extends UntypedActor {
         if(message.getRoundDuration() > 72036854775807.0) {
             // Some fail val.
         } else {
+            laps++;
+            System.out.println("NEW LAP "+ laps);
             // Second time we pass the goal. --> stop tracking
             if(trackingEnabled) {
                 // Stop tracking and close the track.
@@ -89,6 +92,7 @@ public class AnalyseTrack extends UntypedActor {
 
             // First time we pass the goal. --> start tracking
             if(firstRound) {
+
                 firstRound = false;
                 trackingEnabled = true;
                 System.out.println("Start tracking the track.");
@@ -100,6 +104,7 @@ public class AnalyseTrack extends UntypedActor {
     private void handleVelocityMessage(VelocityMessage message) {
         if(trackingEnabled || completeTheTrack) {
             // Track identification.
+            System.out.println("GATE");
             if(oldTrackTimestamp == 0) {
                 oldTrackTimestamp = message.getTimeStamp();
                 //System.out.println("Trackpart start.");
@@ -115,12 +120,10 @@ public class AnalyseTrack extends UntypedActor {
                 trackToAdd.lenght = lenghtOfTrackPart;
 
                 // Type
-                double curveLimit = maxGForce / 5;
-                System.out.println(curveLimit);
                 double mean = gyrozHistory.currentMean();
-                if(mean <= -curveLimit) {
+                if(mean <= -1000) {
                     trackToAdd.type = TrackPart.TrackType.LEFTCURVE;
-                } else if(mean >= curveLimit) {
+                } else if(mean >= 1000) {
                     trackToAdd.type = TrackPart.TrackType.RIGHTCURVE;
                 } else {
                     trackToAdd.type = TrackPart.TrackType.STRAIGHT;
@@ -139,8 +142,6 @@ public class AnalyseTrack extends UntypedActor {
                     startTrack.closeTrack();
                     System.out.println("Track closed and completed.");
                     completeTheTrack = false;
-
-                    this.sexymodderfucka.tell(new ChangeActorMessage("WhereAreWeActor", this.startTrack), getSelf());
                 }
             }
         }
@@ -181,23 +182,21 @@ public class AnalyseTrack extends UntypedActor {
             if (gyrz > maxThres) maxThres = gyrz;
             if (!firstRound) {
                 double aux = (gyrz/maxThres);
-                System.out.print("Z: " + round(aux, 2));
+                System.out.println("Z: " + round(aux, 2));
             }
         }
         else {
             if (gyrz < minThres) minThres = gyrz;
             if (!firstRound) {
                 double aux = (gyrz/minThres);
-                System.out.print("Z: " + round(aux, 2));
+                System.out.println("Z: " + round(aux, 2));
             }
         }
-        //System.out.println(" MAX: "+ maxThres + " MIN: " + minThres);
+        if (laps == 0) {
+            System.out.println(" MAX: "+ maxThres + " MIN: " + minThres);
+        }
 
         //show ((int)gyrz);
-
-        if(Math.abs(gyrz) > maxGForce) {
-            maxGForce = Math.abs(gyrz);
-        }
 
         if (probing) {
             if (iAmStillStanding()) {

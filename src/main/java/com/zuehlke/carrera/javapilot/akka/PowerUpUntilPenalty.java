@@ -8,6 +8,7 @@ import com.zuehlke.carrera.relayapi.messages.RaceStartMessage;
 import com.zuehlke.carrera.relayapi.messages.SensorEvent;
 import com.zuehlke.carrera.timeseries.FloatingHistory;
 import org.apache.commons.lang.StringUtils;
+import com.zuehlke.carrera.javapilot.messages.*;
 
 /**
  *  this logic node increases the power level by 10 units per 0.5 second until it receives a penalty
@@ -16,6 +17,8 @@ import org.apache.commons.lang.StringUtils;
 public class PowerUpUntilPenalty extends UntypedActor {
 
     private final ActorRef kobayashi;
+
+    private int cPenalties;
 
     private double currentPower = 0;
 
@@ -42,6 +45,7 @@ public class PowerUpUntilPenalty extends UntypedActor {
         lastIncrease = System.currentTimeMillis();
         this.kobayashi = pilotActor;
         this.duration = duration;
+        cPenalties = 0;
     }
 
 
@@ -52,6 +56,7 @@ public class PowerUpUntilPenalty extends UntypedActor {
             handleSensorEvent((SensorEvent) message);
 
         } else if ( message instanceof PenaltyMessage) {
+            System.out.println("PENALTY");
             handlePenaltyMessage ();
 
         } else if ( message instanceof RaceStartMessage) {
@@ -63,6 +68,7 @@ public class PowerUpUntilPenalty extends UntypedActor {
     }
 
     private void handleRaceStart() {
+        cPenalties = 0;
         currentPower = 0;
         lastIncrease = 0;
         maxPower = 180; // Max for this phase;
@@ -71,9 +77,21 @@ public class PowerUpUntilPenalty extends UntypedActor {
     }
 
     private void handlePenaltyMessage() {
-        currentPower -= 10;
+        cPenalties +=1;
+        if (cPenalties > 1) {
+            currentPower -= 3;
+        } else if (cPenalties > 0) {
+            currentPower -= 6;
+        } else {
+            currentPower -= 8;
+        }
         kobayashi.tell(new PowerAction((int)currentPower), getSelf());
         probing = false;
+        if (cPenalties == 3) {
+            System.out.println("END FIRST PHASE");
+            kobayashi.tell(new EndPowerUp((int) currentPower), getSelf());
+            //kobayashi.tell(new EndPowerUp(f(int) currentPower), getSelf());
+        }
     }
 
     /**
@@ -86,12 +104,18 @@ public class PowerUpUntilPenalty extends UntypedActor {
         double gyrz = gyrozHistory.shift(message.getG()[2]);
          show ((int)gyrz);
 
-        if (probing) {
+        if (cPenalties < 3) {
             if (iAmStillStanding()) {
                 increase(0.5);
             } else if (message.getTimeStamp() > lastIncrease + duration) {
                 lastIncrease = message.getTimeStamp();
-                increase(3);
+                if (cPenalties > 1) {
+                    increase(1);
+                } else if (cPenalties > 0) {
+                    increase(2.5);
+                } else {
+                    increase(4);
+                }
             }
         }
 
